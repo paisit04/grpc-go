@@ -6,3 +6,6 @@ start:
 	ENV=development \
 	PAYMENT_SERVICE_URL=localhost:3001 \
 	go run cmd/main.go
+
+test:
+	go test -v ./...

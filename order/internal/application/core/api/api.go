@@ -1,8 +1,6 @@
 package api
 
 import (
-	"strings"
-
 	"github.com/paisit04/grpc-go/order/internal/application/core/domain"
 	"github.com/paisit04/grpc-go/order/internal/ports"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -28,21 +26,12 @@ func (a Application) PlaceOrder(order domain.Order) (domain.Order, error) {
 		return domain.Order{}, err
 	}
 	paymentErr := a.payment.Charge(&order)
-	if paymentErr != nil {
-		st := status.Convert(paymentErr)
-		var allErrors []string
-		for _, detail := range st.Details() {
-			switch t := detail.(type) {
-			case *errdetails.BadRequest:
-				for _, violation := range t.GetFieldViolations() {
-					allErrors = append(allErrors, violation.Description)
-				}
-			}
-		}
 
+	if paymentErr != nil {
+		st, _ := status.FromError(paymentErr)
 		fieldErr := &errdetails.BadRequest_FieldViolation{
 			Field:       "payment",
-			Description: strings.Join(allErrors, "\n"),
+			Description: st.Message(),
 		}
 		badReq := &errdetails.BadRequest{}
 		badReq.FieldViolations = append(badReq.FieldViolations, fieldErr)
